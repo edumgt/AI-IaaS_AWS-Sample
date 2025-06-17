@@ -1,0 +1,15 @@
+/venv
+/frames
+/frames_connected
+/outputs
+*.key
+/jogging*
+/Exercises
+/input*
+/output*
+
+edumgt-key
+/.venv
+/zeroscope-env
+*.mp3
+/Y*
