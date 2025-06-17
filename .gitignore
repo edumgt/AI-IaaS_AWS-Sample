@@ -13,3 +13,5 @@ edumgt-key
 /zeroscope-env
 *.mp3
 /Y*
+/n*
+*.csv

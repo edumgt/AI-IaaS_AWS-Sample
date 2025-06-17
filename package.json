@@ -1,0 +1,23 @@
+{
+  "name": "korea_it_edu",
+  "version": "1.0.0",
+  "description": "![alt text](image.png)\r ## 2. **외부 애플리케이션(서버/웹앱)**에서 AWS API를 호출하기 위해\r ## Node.js, Python, Java 등으로 개발된 서버 애플리케이션에서\r ## 예: S3에서 이미지 업로드\r ## 예: Rekognition으로 이미지 분석\r ## AWS 외부에서 실행되므로 인증을 위해 Access Key가 필요\r ## 일반적으로 IAM 사용자에 정책을 부여하고 키 발급해서 사용\r ![alt text](image-1.png)\r ## Access key ID,Secret access key 는 각자 유출되지 않도록 주의 보관 요망\r ![alt text](image-2.png)\r ## 위와 같이 Access Key 가 있어야 합니다.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edumgt/Korea_IT_Edu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/edumgt/Korea_IT_Edu/issues"
+  },
+  "homepage": "https://github.com/edumgt/Korea_IT_Edu#readme",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
+  }
+}
