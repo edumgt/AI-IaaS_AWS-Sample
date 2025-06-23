@@ -52,4 +52,6 @@
 [6] ЛН HOL . (신뢰도: 64.75%)
 [7] 2014 (신뢰도: 32.07%) -->
 
+## https://awscli.amazonaws.com/AWSCLIV2.msi
+
 
