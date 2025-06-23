@@ -13,7 +13,8 @@ AWS.config.update({
 const rekognition = new AWS.Rekognition();
 
 // 비교할 얼굴 이미지 파일 목록
-const faceFiles = ['face1.png', 'face2.png', 'face3.png', 'face4.png'];
+const faceFiles = ['face1.png', 'face2.png', 
+  'face3.png', 'face4.png'];
 
 // 모든 서로 다른 쌍을 양방향으로 비교
 async function compareAllFaces() {
