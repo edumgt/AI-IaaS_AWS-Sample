@@ -4,19 +4,12 @@ const { getConfig } = require('./config');
 let initialized = false;
 
 function initializeAws() {
-  if (initialized) {
-    return;
-  }
+  if (initialized) return;
 
   const { region } = getConfig();
-  const awsConfig = { region };
-
-  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-    awsConfig.accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-    awsConfig.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  }
-
-  AWS.config.update(awsConfig);
+  // Lambda에서는 Execution Role 기반 자격증명을 사용해야 합니다.
+  // accessKeyId/secretAccessKey를 수동 주입하지 않습니다.
+  AWS.config.update({ region });
   initialized = true;
 }
 
