@@ -1,4 +1,4 @@
-# AWS IaaS Example
+# AWS Amazon Rekognition
 
 AWS 기초(IAM, AWS CLI, S3, Rekognition)를 실습 중심으로 학습하기 위한 예제 저장소입니다.
 Node.js + AWS SDK(JavaScript v2) 기반으로 **텍스트 추출, 얼굴 비교, S3 업로드**를 빠르게 실습할 수 있습니다.
