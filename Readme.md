@@ -101,6 +101,14 @@ S3_BUCKET_NAME=polly-bucket-edumgt
 LAMBDA_COMPARE_UPLOAD_FUNCTION=rekognition-face-compare-upload
 LAMBDA_TEXT_FUNCTION=rekognition-text-detect
 ```
+### 오류의 경우 필요한 확인
+
+```
+aws sts get-caller-identity --region ap-northeast-2
+aws lambda list-functions --region ap-northeast-2 --query "Functions[?FunctionName=='rekognition-face-compare-upload'].FunctionName" --output text
+aws lambda get-function --region ap-northeast-2 --function-name rekognition-face-compare-upload
+```
+
 
 - **이미지 유사성 비교**: source/target 이미지를 업로드해 CompareFaces Lambda 호출
 - **텍스트 추출**: 단일 이미지를 업로드해 DetectText Lambda 호출
