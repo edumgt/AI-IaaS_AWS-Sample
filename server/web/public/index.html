@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rekognition Lambda Web Demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>AWS Rekognition Lambda Web Demo</h1>
+
+      <section>
+        <h2>1) 이미지 유사성 비교</h2>
+        <form id="compareForm">
+          <label>Source 이미지 <input id="sourceImage" type="file" accept="image/*" required /></label>
+          <label>Target 이미지 <input id="targetImage" type="file" accept="image/*" required /></label>
+          <label>Similarity Threshold <input id="similarityThreshold" type="number" value="80" min="0" max="100" /></label>
+          <button type="submit">Lambda로 비교하기</button>
+        </form>
+        <pre id="compareResult"></pre>
+      </section>
+
+      <section>
+        <h2>2) 이미지 텍스트 추출</h2>
+        <form id="textForm">
+          <label>분석할 이미지 <input id="textImage" type="file" accept="image/*" required /></label>
+          <button type="submit">Lambda로 텍스트 추출</button>
+        </form>
+        <pre id="textResult"></pre>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

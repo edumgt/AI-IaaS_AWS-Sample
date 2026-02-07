@@ -11,6 +11,8 @@ LAMBDA_RUNTIME="${LAMBDA_RUNTIME:-nodejs18.x}"
 LAMBDA_ROLE_ARN="${LAMBDA_ROLE_ARN:-}"
 LAMBDA_UPLOAD_FUNCTION="${LAMBDA_UPLOAD_FUNCTION:-rekognition-face-upload}"
 LAMBDA_COMPARE_FUNCTION="${LAMBDA_COMPARE_FUNCTION:-rekognition-face-compare}"
+LAMBDA_COMPARE_UPLOAD_FUNCTION="${LAMBDA_COMPARE_UPLOAD_FUNCTION:-rekognition-face-compare-upload}"
+LAMBDA_TEXT_FUNCTION="${LAMBDA_TEXT_FUNCTION:-rekognition-text-detect}"
 LAMBDA_TIMEOUT="${LAMBDA_TIMEOUT:-30}"
 LAMBDA_MEMORY_SIZE="${LAMBDA_MEMORY_SIZE:-256}"
 
@@ -37,7 +39,7 @@ Commands:
   report               Save bucket inventory report to ${REPORT_FILE}
   cleanup              Delete objects under training/ (safe cleanup)
   lambda-package       Package Lambda sources into batch-work/*.zip
-  lambda-deploy        Create/update Lambda functions for upload+compare handlers
+  lambda-deploy        Create/update Lambda functions for upload+compare+web handlers
   lambda-invoke        Invoke upload and compare Lambda sequentially
   lab-all              Run init -> upload -> lambda-deploy -> lambda-invoke -> report
 
@@ -50,6 +52,8 @@ Environment variables:
   LAMBDA_ROLE_ARN      Required for lambda-deploy (IAM role for Lambda)
   LAMBDA_UPLOAD_FUNCTION   Upload Lambda function name
   LAMBDA_COMPARE_FUNCTION  Compare Lambda function name
+  LAMBDA_COMPARE_UPLOAD_FUNCTION  Upload-file compare Lambda function name
+  LAMBDA_TEXT_FUNCTION  DetectText Lambda function name
 USAGE
 }
 
@@ -148,15 +152,19 @@ cleanup_objects() {
 package_lambda() {
   local upload_zip="${WORK_DIR}/lambda-upload.zip"
   local compare_zip="${WORK_DIR}/lambda-compare.zip"
+  local compare_upload_zip="${WORK_DIR}/lambda-compare-upload.zip"
+  local text_zip="${WORK_DIR}/lambda-text.zip"
 
   log "Packaging Lambda source files"
   (
     cd server
     zip -qr "../${upload_zip}" lambda/uploadFacesHandler.js src node_modules package.json package-lock.json
     zip -qr "../${compare_zip}" lambda/compareFacesHandler.js src node_modules package.json package-lock.json
+    zip -qr "../${compare_upload_zip}" lambda/compareUploadedFacesHandler.js src node_modules package.json package-lock.json
+    zip -qr "../${text_zip}" lambda/detectTextHandler.js src node_modules package.json package-lock.json
   )
 
-  log "Packaged: ${upload_zip}, ${compare_zip}"
+  log "Packaged: ${upload_zip}, ${compare_zip}, ${compare_upload_zip}, ${text_zip}"
 }
 
 upsert_lambda() {
@@ -201,6 +209,8 @@ deploy_lambda() {
 
   upsert_lambda "${LAMBDA_UPLOAD_FUNCTION}" "lambda/uploadFacesHandler.handler" "${WORK_DIR}/lambda-upload.zip"
   upsert_lambda "${LAMBDA_COMPARE_FUNCTION}" "lambda/compareFacesHandler.handler" "${WORK_DIR}/lambda-compare.zip"
+  upsert_lambda "${LAMBDA_COMPARE_UPLOAD_FUNCTION}" "lambda/compareUploadedFacesHandler.handler" "${WORK_DIR}/lambda-compare-upload.zip"
+  upsert_lambda "${LAMBDA_TEXT_FUNCTION}" "lambda/detectTextHandler.handler" "${WORK_DIR}/lambda-text.zip"
 
   log "Lambda deploy completed"
 }
