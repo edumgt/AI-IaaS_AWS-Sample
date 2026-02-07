@@ -54,8 +54,8 @@
 
 ```env
 AWS_REGION=ap-northeast-2
-AWS_ACCESS_KEY_ID=AKIA****************
-AWS_SECRET_ACCESS_KEY=********************************
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
 S3_BUCKET_NAME=polly-bucket-edumgt
 SIMILARITY_THRESHOLD=80
 FACE_FILES=face1.png,face2.png,face3.png,face4.png
