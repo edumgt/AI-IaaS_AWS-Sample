@@ -8,26 +8,71 @@
   </head>
   <body>
     <main>
-      <h1>AWS Rekognition Lambda Web Demo</h1>
+      <header class="page-header">
+        <h1>AWS Rekognition Lambda Web Demo</h1>
+        <p class="subtitle">
+          얼굴 유사도 비교 결과를 <b>요약(판정)</b> + <b>상세(테이블)</b> + <b>시각화(얼굴 박스)</b>로 보여줍니다.
+        </p>
+      </header>
 
       <section>
-        <h2>1) 이미지 유사성 비교</h2>
-        <form id="compareForm">
-          <label>Source 이미지 <input id="sourceImage" type="file" accept="image/*" required /></label>
-          <label>Target 이미지 <input id="targetImage" type="file" accept="image/*" required /></label>
-          <label>Similarity Threshold <input id="similarityThreshold" type="number" value="80" min="0" max="100" /></label>
-          <button type="submit">Lambda로 비교하기</button>
+        <div class="section-head">
+          <h2>1) 이미지 유사성 비교</h2>
+          <p class="hint">Source/Target 이미지를 선택하고, 임계값(Threshold)을 조정한 뒤 비교하세요.</p>
+        </div>
+
+        <form id="compareForm" class="compare-form">
+          <div class="compare-grid">
+            <div class="panel">
+              <div class="panel-title">Source 이미지</div>
+              <input id="sourceImage" type="file" accept="image/*" required />
+              <img id="sourcePreview" class="preview" alt="Source preview" />
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">Target 이미지</div>
+              <input id="targetImage" type="file" accept="image/*" required />
+              <div class="canvas-wrap">
+                <img id="targetPreview" class="preview" alt="Target preview" />
+                <canvas id="bboxCanvas" aria-label="bounding box overlay"></canvas>
+              </div>
+              <div class="mini-hint">※ 매칭된 얼굴(최고 유사도) 박스를 Target 이미지에 표시합니다.</div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <label class="control">
+              <span>Similarity Threshold</span>
+              <input id="similarityThreshold" type="number" value="80" min="0" max="100" />
+            </label>
+
+            <button id="btnCompare" type="submit">Lambda로 비교하기</button>
+            <span id="compareStatus" class="status"></span>
+          </div>
         </form>
-        <pre id="compareResult"></pre>
+
+        <div id="compareResult" class="result"></div>
       </section>
 
       <section>
-        <h2>2) 이미지 텍스트 추출</h2>
-        <form id="textForm">
-          <label>분석할 이미지 <input id="textImage" type="file" accept="image/*" required /></label>
-          <button type="submit">Lambda로 텍스트 추출</button>
+        <div class="section-head">
+          <h2>2) 이미지 텍스트 추출</h2>
+          <p class="hint">Rekognition DetectText(또는 유사 Lambda) 결과를 그대로 표시합니다.</p>
+        </div>
+
+        <form id="textForm" class="text-form">
+          <label class="control">
+            <span>분석할 이미지</span>
+            <input id="textImage" type="file" accept="image/*" required />
+          </label>
+          <button id="btnText" type="submit">Lambda로 텍스트 추출</button>
+          <span id="textStatus" class="status"></span>
         </form>
-        <pre id="textResult"></pre>
+
+        <details class="debug">
+          <summary>텍스트 추출 결과(JSON)</summary>
+          <pre id="textResult"></pre>
+        </details>
       </section>
     </main>
 

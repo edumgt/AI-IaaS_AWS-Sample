@@ -198,6 +198,60 @@ aws lambda get-function-configuration \
 - `batch-work/upload-result.json`
 - `batch-work/compare-result.json`
 
+---
+```
+root@DESKTOP-D6A344Q:/home/AI-AWS-Rekognition# aws lambda get-function-configuration \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-compare \
+  --query '{Runtime:Runtime, Handler:Handler, Role:Role, Timeout:Timeout, MemorySize:MemorySize}' \
+  --output table
+--------------------------------------------------------------------------
+|                        GetFunctionConfiguration                        |
++------------+-----------------------------------------------------------+
+|  Handler   |  lambda/compareFacesHandler.handler                       |
+|  MemorySize|  256                                                      |
+|  Role      |  arn:aws:iam::086015456585:role/rekognition-lambda-role   |
+|  Runtime   |  nodejs18.x                                               |
+|  Timeout   |  30                                                       |
++------------+-----------------------------------------------------------+
+root@DESKTOP-D6A344Q:/home/AI-AWS-Rekognition# 
+```
+---
+```
+aws lambda create-function \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-compare-upload \
+  --runtime nodejs18.x \
+  --handler lambda/compareFacesHandler.handler \
+  --role arn:aws:iam::086015456585:role/rekognition-lambda-role \
+  --timeout 30 \
+  --memory-size 256 \
+  --zip-file fileb://./batch-work/lambda-compare-upload.zip
+```
+---
+```
+aws lambda get-function --region ap-northeast-2 --function-name rekognition-face-compare-upload
+```
+---
+```
+aws lambda get-function-configuration \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-upload \
+  --query 'Environment.Variables' \
+  --output json
+```
+---
+```
+aws lambda update-function-configuration \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-compare-upload \
+  --environment "Variables={S3_BUCKET_NAME=polly-bucket-edumgt}"
+
+aws lambda wait function-updated \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-compare-upload
+```
+
 ### 5-4. 실습 원클릭 파이프라인
 
 ```bash
@@ -230,6 +284,10 @@ aws lambda get-function-configuration \
 ---
 
 ## 7) 실습 체크리스트
+
+### “임계값 80% 기준으로 98.47% 일치 → 동일 인물로 판단”
+### “임계값 80% 기준으로 최대 62.10% → 동일 인물로 보기 어려움”
+
 
 - [ ] `aws sts get-caller-identity` 정상 응답
 - [ ] `init` 후 버킷 암호화, lifecycle 정책 적용 확인
