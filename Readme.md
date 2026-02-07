@@ -177,6 +177,16 @@ export LAMBDA_ROLE_ARN=arn:aws:iam::086015456585:role/rekognition-lambda-role
 - `rekognition-face-compare-upload` (`lambda/compareUploadedFacesHandler.handler`)
 - `rekognition-text-detect` (`lambda/detectTextHandler.handler`)
 
+---
+```
+aws lambda get-function-configuration \
+  --region ap-northeast-2 \
+  --function-name rekognition-face-upload \
+  --query '{State:State, LastUpdateStatus:LastUpdateStatus, Reason:LastUpdateStatusReason}' \
+  --output table
+```
+
+
 ### 5-3. Lambda 호출 및 결과 파일 확인
 
 ```bash
