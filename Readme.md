@@ -24,7 +24,8 @@
 │  │  └─ compareFacesHandler.js# Lambda: face1~4 유사도 비교
 │  ├─ upload.js                # 로컬 실행용 업로드 엔트리
 │  ├─ compare.js               # 로컬 실행용 비교 엔트리
-│  └─ extract.js               # 텍스트 감지 샘플
+│  ├─ extract.js               # 텍스트 감지 샘플
+│  └─ web/                     # Node.js 웹 데모(파일 업로드 -> Lambda 호출)
 └─ scripts/
    └─ aws_batch_ops.sh         # 버킷/Lambda/실습 배치 자동화
 ```
@@ -79,6 +80,30 @@ npm run extract
 - `extract`: `sample.png` 텍스트 검출
 
 ---
+
+
+## 4-1) 웹 프론트엔드 모듈 실행 (신규)
+
+`server/web`는 브라우저에서 이미지를 업로드하고 Lambda를 직접 호출하는 Node.js 웹 예제입니다.
+
+```bash
+cd server
+npm run web
+```
+
+브라우저 접속: `http://localhost:3000`
+
+필요 환경 변수:
+
+```env
+AWS_REGION=ap-northeast-2
+S3_BUCKET_NAME=polly-bucket-edumgt
+LAMBDA_COMPARE_UPLOAD_FUNCTION=rekognition-face-compare-upload
+LAMBDA_TEXT_FUNCTION=rekognition-text-detect
+```
+
+- **이미지 유사성 비교**: source/target 이미지를 업로드해 CompareFaces Lambda 호출
+- **텍스트 추출**: 단일 이미지를 업로드해 DetectText Lambda 호출
 
 ## 5) Lambda 배포 자동화 (핵심)
 
@@ -141,6 +166,8 @@ export LAMBDA_ROLE_ARN=arn:aws:iam::086015456585:role/rekognition-lambda-role
 
 - `rekognition-face-upload` (`lambda/uploadFacesHandler.handler`)
 - `rekognition-face-compare` (`lambda/compareFacesHandler.handler`)
+- `rekognition-face-compare-upload` (`lambda/compareUploadedFacesHandler.handler`)
+- `rekognition-text-detect` (`lambda/detectTextHandler.handler`)
 
 ### 5-3. Lambda 호출 및 결과 파일 확인
 
@@ -178,7 +205,9 @@ export LAMBDA_ROLE_ARN=arn:aws:iam::086015456585:role/rekognition-lambda-role
 - `WORK_DIR`: zip/리포트 출력 경로(기본 `./batch-work`)
 - `LAMBDA_ROLE_ARN`: Lambda 생성 시 필요
 - `LAMBDA_UPLOAD_FUNCTION`: 업로드 함수명 기본값
-- `LAMBDA_COMPARE_FUNCTION`: 비교 함수명 기본값
+- `LAMBDA_COMPARE_FUNCTION`: 샘플 face1~4 비교 함수명 기본값
+- `LAMBDA_COMPARE_UPLOAD_FUNCTION`: 웹 업로드 이미지 비교 함수명 기본값
+- `LAMBDA_TEXT_FUNCTION`: 웹 텍스트 추출 함수명 기본값
 
 ---
 

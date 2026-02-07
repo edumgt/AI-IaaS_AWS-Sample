@@ -11,7 +11,10 @@
     "compare:faces": "node compare.js",
     "lambda:upload:local": "node -e \"require('./lambda/uploadFacesHandler').handler().then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\"",
     "lambda:compare:local": "node -e \"require('./lambda/compareFacesHandler').handler().then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "web": "node web/app.js",
+    "lambda:compare:upload:local": "node -e \"require('./lambda/compareUploadedFacesHandler').handler({sourceImageBase64: require('fs').readFileSync('face1.png').toString('base64'), targetImageBase64: require('fs').readFileSync('face2.png').toString('base64')}).then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\"",
+    "lambda:text:local": "node -e \"require('./lambda/detectTextHandler').handler({imageBase64: require('fs').readFileSync('sample.png').toString('base64')}).then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\""
   },
   "repository": {
     "type": "git",
