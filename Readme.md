@@ -131,7 +131,42 @@ UPLOAD_DIR=. ./scripts/aws_batch_ops.sh sync
 - Bucket: `polly-bucket-edumgt`
 - ARN: `arn:aws:iam::1234********:user/ab***`
 
-## 9) 참고 링크
+## 9) 학습 참고 이미지 (DOC/image-0 ~ image-19)
+Readme 학습 흐름에 맞춰 관련 이미지를 바로 확인할 수 있도록 첨부 링크를 정리했습니다.
+
+### 클라우드/AWS 공통 기초 · IAM · AWS CLI
+![AWS 기초 및 계정 보안](DOC/image-0.png)
+![IAM 사용자 및 권한 설정](DOC/image-1.png)
+![AWS CLI 환경 구성](DOC/image-2.png)
+![CLI 인증/점검 화면](DOC/image-3.png)
+
+### Amazon S3 핵심 개념
+![S3 버킷 생성 및 설정](DOC/image-4.png)
+![S3 객체 업로드 예시](DOC/image-5.png)
+![S3 정책 적용 확인](DOC/image-6.png)
+
+### Node.js + AWS SDK (JavaScript v2)
+![Node.js 프로젝트 준비](DOC/image-7.png)
+![환경 변수 및 SDK 설정](DOC/image-8.png)
+![SDK 호출 결과 확인](DOC/image-9.png)
+
+### Amazon Rekognition (텍스트/얼굴 분석)
+![Rekognition 서비스 접근](DOC/image-10.png)
+![텍스트 감지 결과](DOC/image-11.png)
+![얼굴 비교 입력 이미지](DOC/image-12.png)
+![얼굴 비교 결과](DOC/image-13.png)
+
+### 운영/자동화 · 보안 · 비용 점검
+![배치 스크립트 실행](DOC/image-14.png)
+![자동화 리포트 생성](DOC/image-15.png)
+![CloudWatch/모니터링 확인](DOC/image-16.png)
+![보안 점검 체크리스트](DOC/image-17.png)
+![비용/청구 대시보드](DOC/image-18.png)
+![최종 정리 및 확장 로드맵](DOC/image-19.png)
+
+---
+
+## 10) 참고 링크
 - Rekognition: https://docs.aws.amazon.com/rekognition/
 - S3: https://docs.aws.amazon.com/s3/
 - AWS CLI: https://docs.aws.amazon.com/cli/
