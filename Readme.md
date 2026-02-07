@@ -1,175 +1,202 @@
-# AWS Amazon Rekognition
+# AWS Rekognition 실습 리팩토링 가이드 (Node.js + Lambda + Shell 자동화)
 
-## 시작 전에 먼저 학습해야 할 기술 스택 (Pre-Study Roadmap)
-이 저장소는 **AWS + Node.js + CLI 자동화**를 한 번에 다루기 때문에, 아래 순서로 선행 학습을 하면 실습 성공률이 크게 올라갑니다.
+이 문서는 이 저장소를 **실습 중심으로 재구성**한 최신 가이드입니다.  
+목표는 아래 3가지를 한 번에 수행하는 것입니다.
 
-### 1) 클라우드/AWS 공통 기초
-- Region / AZ / Account 개념
-- 루트 계정 보안(MFA), IAM 사용자 분리 원칙
-- 비용 구조(요청 기반 과금, 저장소 과금)
-
-### 2) IAM (권한 모델 핵심)
-- IAM User / Group / Role 차이
-- JSON Policy 문법(Effect, Action, Resource, Condition)
-- 최소 권한 원칙(Least Privilege)
-
-### 3) AWS CLI
-- `aws configure`, `aws sts get-caller-identity`
-- `aws s3 ls/cp/sync/rm`, `aws s3api` 기초
-- 프로파일 기반 운영(`AWS_PROFILE`)과 자동화 시 주의사항
-
-### 4) Amazon S3
-- 버킷/객체 구조, 퍼블릭 접근 차단
-- 버킷 정책, 라이프사이클, 기본 암호화(SSE-S3)
-- 실습 버킷: **`polly-bucket-edumgt`**
-
-### 5) Node.js + AWS SDK (JavaScript v2)
-- 비동기 처리(Promise), CommonJS 모듈
-- `dotenv`로 자격증명/리전 변수 분리
-- Rekognition API 응답(JSON) 해석
-
-### 6) Amazon Rekognition
-- DetectText / CompareFaces 사용 목적
-- confidence threshold와 오탐/미탐 이해
-- 이미지 입력(S3 Object vs Bytes) 전략
-
-### 7) 운영/자동화 관점
-- Bash 스크립트 작성(`set -euo pipefail`)
-- 반복 작업을 CLI로 배치 처리
-- 리포트 생성/정리(cleanup) 루틴 자동화
+1. `server` 기반 Node.js 코드로 Rekognition 실습 환경 구성
+2. `face1.png ~ face4.png` 업로드 및 유사성 분석을 **AWS Lambda**로 실행
+3. `scripts/aws_batch_ops.sh` 하나로 **버킷 준비 → Lambda 배포/호출 → 결과 수집** 자동화
 
 ---
 
-AWS 기초(IAM, AWS CLI, S3, Rekognition)를 실습 중심으로 학습하기 위한 예제 저장소입니다.
-Node.js + AWS SDK(JavaScript v2) 기반으로 **텍스트 추출, 얼굴 비교, S3 업로드**를 빠르게 실습할 수 있습니다.
+## 1) 리팩토링 핵심 구조
 
-## 1) 프로젝트 목표
-- IAM 사용자/권한/액세스 키 구조 이해
-- AWS CLI 인증 및 S3 점검 기본기 습득
-- AWS SDK를 통한 Rekognition API 호출 실습
-- S3 버킷 업로드/정책/라이프사이클 설정 학습
-
-## 2) 기술 스택
-- Runtime: Node.js (권장 18.x)
-- Language: JavaScript (CommonJS)
-- Cloud: AWS (IAM, Rekognition, S3, CloudWatch, CLI)
-- Library: `aws-sdk`(v2), `dotenv`
-- Tooling: AWS CLI v2, npm
-
-## 3) 주요 파일
-- `extract.js`: `sample.png` 텍스트 감지
-- `compare.js`: 얼굴 이미지 비교
-- `upload.js`: 얼굴 이미지 S3 업로드
-- `bucket.json`: S3 버킷 정책 예시
-- `delete.json`: S3 라이프사이클 정책 예시
-- `scripts/aws_batch_ops.sh`: AWS CLI 일괄 작업 스크립트
-
-## 4) 빠른 시작
-
-### 4-1. 의존성 설치
 ```bash
-npm install
+.
+├─ server/
+│  ├─ src/
+│  │  ├─ awsClients.js         # AWS SDK 클라이언트 초기화
+│  │  ├─ config.js             # 환경변수/실습 기본값 관리
+│  │  ├─ fileUtils.js          # 이미지 파일 로딩 유틸
+│  │  └─ faceWorkflow.js       # 얼굴 업로드 + 얼굴 비교 비즈니스 로직
+│  ├─ lambda/
+│  │  ├─ uploadFacesHandler.js # Lambda: face1~4 S3 업로드
+│  │  └─ compareFacesHandler.js# Lambda: face1~4 유사도 비교
+│  ├─ upload.js                # 로컬 실행용 업로드 엔트리
+│  ├─ compare.js               # 로컬 실행용 비교 엔트리
+│  └─ extract.js               # 텍스트 감지 샘플
+└─ scripts/
+   └─ aws_batch_ops.sh         # 버킷/Lambda/실습 배치 자동화
 ```
 
-### 4-2. 환경 변수 설정 (`.env`)
+---
+
+## 2) 사전 준비
+
+- AWS 계정, IAM 사용자(또는 Role) 준비
+- 최소 권한 권장 정책
+  - S3: 버킷 생성/설정/업로드/조회
+  - Lambda: 함수 생성/수정/호출
+  - Rekognition: `CompareFaces`, `DetectText`
+  - IAM: Lambda 생성 시 Role 조회 권한
+- 로컬 도구
+  - Node.js 18+
+  - npm
+  - AWS CLI v2
+  - zip 명령어
+
+---
+
+## 3) 환경 변수 설정
+
+루트 또는 `server/.env` 기준으로 아래 값 설정:
+
 ```env
 AWS_REGION=ap-northeast-2
 AWS_ACCESS_KEY_ID=AKIA****************
 AWS_SECRET_ACCESS_KEY=********************************
 S3_BUCKET_NAME=polly-bucket-edumgt
-S3_BUCKET_REGION=ap-northeast-2
+SIMILARITY_THRESHOLD=80
+FACE_FILES=face1.png,face2.png,face3.png,face4.png
 ```
 
-> `.env`, 액세스 키, 실제 계정 식별자는 절대 커밋하지 마세요.
+> 실제 운영에서는 Access Key보다 IAM Role(예: EC2/CloudShell/Lambda 실행 역할)을 우선 권장합니다.
 
-### 4-3. 스크립트 실행
+---
+
+## 4) 로컬 실행(빠른 검증)
+
 ```bash
+cd server
+npm install
+npm run upload:faces
+npm run compare:faces
 npm run extract
-npm run compare
-npm run upload
 ```
 
-## 5) AWS CLI 설정
-```bash
-aws configure
-aws configure list
-```
+- `upload:faces`: `training/face1~4.png` 경로로 S3 업로드
+- `compare:faces`: face1~4를 조합 비교하여 유사도 출력
+- `extract`: `sample.png` 텍스트 검출
 
-## 6) AWS CLI 일괄 작업 스크립트
-`polly-bucket-edumgt` 기준으로 버킷 초기화/업로드/동기화/리포트를 자동화합니다.
+---
+
+## 5) Lambda 배포 자동화 (핵심)
+
+`scripts/aws_batch_ops.sh`가 Lambda 실습용 명령을 제공합니다.
+
+### 5-1. 기본 배치 명령
 
 ```bash
-# 초기화(버킷 생성, 암호화, lifecycle)
+# 버킷 초기화(없으면 생성, 암호화/lifecycle 적용)
 ./scripts/aws_batch_ops.sh init
 
-# 기본 샘플 업로드(sample.png, face1~4.png)
+# 샘플 파일 업로드(face1~4 + sample)
 ./scripts/aws_batch_ops.sh upload
 
-# 이미지 일괄 동기화
-UPLOAD_DIR=. ./scripts/aws_batch_ops.sh sync
-
-# 객체 목록 조회
-./scripts/aws_batch_ops.sh list
-
-# 리포트 생성
-./scripts/aws_batch_ops.sh report
-
-# training/ 정리
-./scripts/aws_batch_ops.sh cleanup
+# Lambda 배포 zip 생성
+./scripts/aws_batch_ops.sh lambda-package
 ```
 
-## 7) 학습 문서
-- 챕터형 커리큘럼: `DOC/Chapter01` ~ `DOC/Chapter10`
-- 실행/환경 준비 상세: `Readme2.md`
-- S3 퍼블릭 접근 및 라이프사이클: `Readme3.md`
-- IAM Principal vs AssumeRole: `Readme4.md`
+### 5-2. Lambda 함수 생성/업데이트
 
-## 8) 민감정보 마스킹 기준
-- 이메일: `ab***@example.com`
-- Access Key: `AKIA****************`
-- Account ID: `1234********`
-- Bucket: `polly-bucket-edumgt`
-- ARN: `arn:aws:iam::1234********:user/ab***`
+최초 생성 시 `LAMBDA_ROLE_ARN`이 필요합니다.
 
-## 9) 학습 참고 이미지 (DOC/image-0 ~ image-19)
-Readme 학습 흐름에 맞춰 관련 이미지를 바로 확인할 수 있도록 첨부 링크를 정리했습니다.
+```bash
+export AWS_REGION=ap-northeast-2
+export S3_BUCKET_NAME=polly-bucket-edumgt
+export LAMBDA_ROLE_ARN=arn:aws:iam::1234********:role/rekognition-lambda-role
 
-### 클라우드/AWS 공통 기초 · IAM · AWS CLI
-![AWS 기초 및 계정 보안](DOC/image-0.png)
-![IAM 사용자 및 권한 설정](DOC/image-1.png)
-![AWS CLI 환경 구성](DOC/image-2.png)
-![CLI 인증/점검 화면](DOC/image-3.png)
+./scripts/aws_batch_ops.sh lambda-deploy
+```
 
-### Amazon S3 핵심 개념
-![S3 버킷 생성 및 설정](DOC/image-4.png)
-![S3 객체 업로드 예시](DOC/image-5.png)
-![S3 정책 적용 확인](DOC/image-6.png)
+자동으로 아래 함수가 생성(또는 업데이트)됩니다.
 
-### Node.js + AWS SDK (JavaScript v2)
-![Node.js 프로젝트 준비](DOC/image-7.png)
-![환경 변수 및 SDK 설정](DOC/image-8.png)
-![SDK 호출 결과 확인](DOC/image-9.png)
+- `rekognition-face-upload` (`lambda/uploadFacesHandler.handler`)
+- `rekognition-face-compare` (`lambda/compareFacesHandler.handler`)
 
-### Amazon Rekognition (텍스트/얼굴 분석)
-![Rekognition 서비스 접근](DOC/image-10.png)
-![텍스트 감지 결과](DOC/image-11.png)
-![얼굴 비교 입력 이미지](DOC/image-12.png)
-![얼굴 비교 결과](DOC/image-13.png)
+### 5-3. Lambda 호출 및 결과 파일 확인
 
-### 운영/자동화 · 보안 · 비용 점검
-![배치 스크립트 실행](DOC/image-14.png)
-![자동화 리포트 생성](DOC/image-15.png)
-![CloudWatch/모니터링 확인](DOC/image-16.png)
-![보안 점검 체크리스트](DOC/image-17.png)
-![비용/청구 대시보드](DOC/image-18.png)
-![최종 정리 및 확장 로드맵](DOC/image-19.png)
+```bash
+./scripts/aws_batch_ops.sh lambda-invoke
+```
+
+결과 파일:
+
+- `batch-work/upload-result.json`
+- `batch-work/compare-result.json`
+
+### 5-4. 실습 원클릭 파이프라인
+
+```bash
+./scripts/aws_batch_ops.sh lab-all
+```
+
+실행 순서:
+
+1. `init`
+2. `upload`
+3. `lambda-deploy`
+4. `lambda-invoke`
+5. `report`
 
 ---
 
-## 10) 참고 링크
-- Rekognition: https://docs.aws.amazon.com/rekognition/
-- S3: https://docs.aws.amazon.com/s3/
-- AWS CLI: https://docs.aws.amazon.com/cli/
+## 6) 스크립트 환경 변수 상세
+
+- `AWS_PROFILE`: AWS CLI 프로파일 사용 시 지정
+- `AWS_REGION`: 리전
+- `S3_BUCKET_NAME`: 버킷명(기본 `polly-bucket-edumgt`)
+- `UPLOAD_DIR`: 샘플 이미지 소스 경로(기본 `./server`)
+- `WORK_DIR`: zip/리포트 출력 경로(기본 `./batch-work`)
+- `LAMBDA_ROLE_ARN`: Lambda 생성 시 필요
+- `LAMBDA_UPLOAD_FUNCTION`: 업로드 함수명 기본값
+- `LAMBDA_COMPARE_FUNCTION`: 비교 함수명 기본값
 
 ---
-실습 후에는 퍼블릭 정책 해제, 불필요한 키 삭제, 키 로테이션을 반드시 수행하세요.
+
+## 7) 실습 체크리스트
+
+- [ ] `aws sts get-caller-identity` 정상 응답
+- [ ] `init` 후 버킷 암호화, lifecycle 정책 적용 확인
+- [ ] `upload` 후 `training/face1~4.png` 존재 확인
+- [ ] `lambda-deploy` 성공 로그 확인
+- [ ] `lambda-invoke` 결과 JSON에서 유사도 값 확인
+- [ ] `report` 파일 생성 확인
+
+---
+
+## 8) 트러블슈팅
+
+1. **Lambda 생성 실패 (`AccessDenied`)**
+   - `LAMBDA_ROLE_ARN`의 신뢰 정책(Trust Policy)에 `lambda.amazonaws.com` 포함 여부 확인
+
+2. **`InvalidParameterValueException` (핸들러/런타임 오류)**
+   - 핸들러 문자열이 아래와 일치하는지 확인
+     - `lambda/uploadFacesHandler.handler`
+     - `lambda/compareFacesHandler.handler`
+
+3. **S3 업로드 실패**
+   - `S3_BUCKET_NAME`, 리전, 버킷 정책, 퍼블릭 차단과 무관한 IAM 권한 확인
+
+4. **유사도 결과가 0 또는 낮음**
+   - 입력 이미지 품질, 얼굴 정면 여부, 조명 조건을 조정
+   - `SIMILARITY_THRESHOLD`를 70~90 범위에서 실험
+
+---
+
+## 9) 비용/보안 정리
+
+실습 후 반드시 아래를 수행하세요.
+
+- 불필요한 Lambda 함수 삭제
+- 테스트 객체 정리: `./scripts/aws_batch_ops.sh cleanup`
+- Access Key 미사용 시 비활성화/삭제
+- CloudWatch 로그 보존 기간 설정
+
+---
+
+## 10) 참고
+
+- Amazon Rekognition Docs: https://docs.aws.amazon.com/rekognition/
+- AWS Lambda Docs: https://docs.aws.amazon.com/lambda/
+- AWS CLI Docs: https://docs.aws.amazon.com/cli/

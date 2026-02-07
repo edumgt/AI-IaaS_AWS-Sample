@@ -7,6 +7,10 @@
     "extract": "node extract.js",
     "compare": "node compare.js",
     "upload": "node upload.js",
+    "upload:faces": "node upload.js",
+    "compare:faces": "node compare.js",
+    "lambda:upload:local": "node -e \"require('./lambda/uploadFacesHandler').handler().then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\"",
+    "lambda:compare:local": "node -e \"require('./lambda/compareFacesHandler').handler().then((r)=>console.log(r.body)).catch((e)=>{console.error(e);process.exit(1);})\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
