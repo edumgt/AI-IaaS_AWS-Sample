@@ -6,7 +6,7 @@
       "Effect": "Allow",
       "Principal": "*",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::edumgt-bucket-20250619/*"
+      "Resource": "arn:aws:s3:::polly-bucket-edumgt/*"
     }
   ]
 }
