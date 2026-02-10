@@ -9,6 +9,18 @@
 
 ---
 
+
+## 문서 맵 (빠른 이동)
+
+실습 목적에 따라 아래 문서를 함께 참고하세요.
+
+- `Readme2.md`: 로컬 실행 중심 빠른 시작 및 트러블슈팅
+- `Readme3.md`: S3 퍼블릭 접근/라이프사이클 운영 가이드
+- `Readme4.md`: IAM Principal/AssumeRole 개념 정리
+- `Lambda.md`: Lambda 목록 조회/백업 운영 가이드
+- `DOC/README.md`: 10개 챕터 커리큘럼 인덱스
+
+---
 ## 1) 리팩토링 핵심 구조
 
 ```bash
