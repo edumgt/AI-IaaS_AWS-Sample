@@ -320,6 +320,132 @@ aws lambda wait function-updated \
      - `lambda/uploadFacesHandler.handler`
      - `lambda/compareFacesHandler.handler`
 
+
+### 내일 체크 대상
+---
+```
+{
+  "errorType": "Runtime.ImportModuleError",
+  "errorMessage": "Error: Cannot find module 'compareFacesHandler'\nRequire stack:\n- /var/runtime/index.mjs",
+  "trace": [
+    "Runtime.ImportModuleError: Error: Cannot find module 'compareFacesHandler'",
+    "Require stack:",
+    "- /var/runtime/index.mjs",
+    "    at loadModule (file:///var/runtime/index.mjs:573:13)",
+    "    at async UserFunctionLoader.load (file:///var/runtime/index.mjs:504:20)",
+    "    at async createRuntime (file:///var/runtime/index.mjs:1217:52)",
+    "    at async ignition (file:///var/runtime/index.mjs:1633:21)"
+  ]
+}
+```
+---
+```
+이 에러가 왜 나는지(핸들러 경로/파일명/번들링/ESM·CJS 불일치)부터 짚고, Lambda에서 바로 동작하는 정답 핸들러 설정 + 파일 구조 + 빌드/배포 체크리스트를 한 번에 정리해줄게요.
+
+24s 동안 생각함
+
+이 에러는 Lambda가 “compareFacesHandler”라는 모듈(파일)을 런타임에서 못 찾는다는 뜻이에요. 거의 항상 아래 4가지 중 하나입니다.
+
+1) Handler 값이 잘못됨 (가장 흔함)
+
+Lambda의 Handler는 파일경로.익스포트이름 형식이어야 해요.
+
+✅ 올바른 예
+
+파일이 루트에 있고 export가 handler라면
+Handler = compareFacesHandler.handler
+
+파일이 src/compareFacesHandler.js라면
+Handler = src/compareFacesHandler.handler
+
+빌드 결과가 dist/compareFacesHandler.js라면
+Handler = dist/compareFacesHandler.handler
+
+❌ 잘못된 예
+
+compareFacesHandler (점 없이 파일만 적음) → 런타임이 “패키지 모듈”처럼 해석해서 못 찾는 경우가 많음
+
+2) 배포 zip 안에 파일이 “루트”에 없거나, 경로가 한 단계 더 들어가 있음
+
+Lambda는 /var/task(zip 풀린 최상위) 기준으로 핸들러 파일을 찾습니다.
+
+흔한 실수
+
+zip 구조가 이렇게 됨:
+
+function.zip
+  my-project/
+    compareFacesHandler.js
+    package.json
+
+→ Lambda는 루트에 compareFacesHandler.js가 없어서 못 찾음
+
+✅ 올바른 zip 구조
+function.zip
+  compareFacesHandler.js
+  package.json
+  node_modules/...
+✅ zip 만들 때 추천 커맨드
+
+빌드 산출물이 dist/에 있다면:
+
+cd dist
+zip -r ../function.zip .
+
+zip -r function.zip dist 처럼 “폴더째” 넣으면 한 단계 더 들어가서 깨지는 경우가 많아요.
+
+3) 파일 확장자/ESM(CJS) 방식이 핸들러와 안 맞음
+
+런타임이 index.mjs로 부팅되는 건 정상이고, 당신 코드가 ESM이든 CJS든 맞춰주면 돼요.
+
+✅ CommonJS 방식(가장 무난)
+
+compareFacesHandler.js
+
+exports.handler = async (event) => {
+  return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+};
+
+Handler: compareFacesHandler.handler
+
+✅ ESM 방식
+
+파일 확장자를 .mjs로 하거나
+
+package.json에 "type": "module" 설정
+
+compareFacesHandler.mjs
+
+export const handler = async (event) => {
+  return { statusCode: 200, body: JSON.stringify({ ok: true }) };
+};
+
+Handler: compareFacesHandler.handler (확장자 없음)
+
+TS로 빌드한다면 **최종 산출물(.js)이 어디에 생기는지(dist 등)**와 Handler 경로가 반드시 일치해야 합니다.
+
+4) 대소문자 불일치 (리눅스는 대소문자 구분)
+
+로컬(Windows/Mac)에서는 통과해도, Lambda(Linux)는 구분합니다.
+
+파일명: compareFacesHandler.js
+
+Handler: compareFacesHandler.handler
+이 둘이 철자/대소문자까지 정확히 같아야 해요.
+
+빠른 해결 순서 (이대로 하면 대부분 끝)
+
+Lambda 설정 → Handler를 compareFacesHandler.handler (또는 실제 폴더 경로 포함)로 수정
+
+배포 zip을 열어보고 **루트에 compareFacesHandler.js(또는 dist/… 경로)**가 실제로 있는지 확인
+
+코드가 CJS면 exports.handler, ESM이면 export const handler인지 확인 + package.json type/확장자 확인
+
+파일명 대소문자 확인
+
+원하면, 지금 프로젝트의 실제 파일 트리(핸들러 파일 위치) + Lambda의 Handler 설정 값 + 빌드/배포 방식(SAM/CDK/Serverless/콘솔 zip) 이 3가지만 붙여주면, 당신 상황에 맞는 “정답 Handler 값 + 올바른 zip 커맨드”를 딱 한 줄로 확정해줄게요.
+```
+
 3. **S3 업로드 실패**
    - `S3_BUCKET_NAME`, 리전, 버킷 정책, 퍼블릭 차단과 무관한 IAM 권한 확인
 
