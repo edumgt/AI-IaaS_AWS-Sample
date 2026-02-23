@@ -1,5 +1,8 @@
 *.key
+
 .env
 /server/.env
-/server/node_modules
+
+/server/node_modules/
 /lambda-backup*
+/DOC/*.mp4
