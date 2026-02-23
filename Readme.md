@@ -233,11 +233,11 @@ root@DESKTOP-D6A344Q:/home/AI-AWS-Rekognition#
 aws lambda create-function \
   --region ap-northeast-2 \
   --function-name rekognition-face-compare-upload \
-  --runtime nodejs18.x \
+  --runtime nodejs24.x \
   --handler lambda/compareFacesHandler.handler \
   --role arn:aws:iam::086015456585:role/rekognition-lambda-role \
-  --timeout 30 \
-  --memory-size 256 \
+  --timeout 5 \
+  --memory-size 128 \
   --zip-file fileb://./batch-work/lambda-compare-upload.zip
 ```
 ---
